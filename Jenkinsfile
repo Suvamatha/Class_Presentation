@@ -1,61 +1,86 @@
 pipeline {
     agent any
     environment {
-        scannerHome = tool 'sonar7.0'
+        dockerImages = "suvam1/jenkins-project"
     }
-stages{
-        stage('Build') {
+    stages {
+        stage('Build Java App') {
+            // agent {
+            //     label 'slave-node1'
+            // }
             steps {
-                sh 'mvn -f pom.xml install -DskipTests'
+                sh 'mvn -f pom.xml clean package'
             }
             post {
                 success {
-                    echo 'Now Archiving it...'
-                    archiveArtifacts artifacts: '**/target/*.war'
+                    echo 'Build Completed so archiving the war file'
+                    archiveArtifacts artifacts: '**/*.war', followSymlinks: false
+
                 }
             }
         }
-        stage('UNIT TEST') {
-            steps {
-                sh 'mvn -f pom.xml test'
-            }
-        }
-        stage('Checkstyle Analysis') {
-            steps {
-                sh 'mvn -f pom.xml checkstyle:checkstyle'
-            }
-        }
-        stage('Sonar Analysis') {
-            steps {
-                withSonarQubeEnv('sonar') {
-                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=java-tomcat-sample \
-                        -Dsonar.projectName=java-tomcat-sample \
-                        -Dsonar.projectVersion=4.0 \
-                        -Dsonar.sources=src/ \
-                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
-                }
-            }
-        }
-stage("UploadArtifact") {
-            steps {
-                nexusArtifactUploader(
-                    nexusVersion: 'nexus3',
-                    protocol: 'http',
-                    nexusUrl: '172.31.25.191:8081',
-                    groupId: 'QA',
-                    version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",
-                    repository: 'java-app',
-                    credentialsId: 'sonartypecred',
-                    artifacts: [
-                        [artifactId: 'java-tomcat-sample',
-                         classifier: '',
-                         file: 'target/java-tomcat-maven-example.war',
-                         type: 'war']
-                    ]
-                )
-            }
-        }
-}
+        // stage('Create Docker image') {
+        //     agent {
+        //         label 'slave-node1'
+        //     }   
+        //     steps {
+        //         copyArtifacts filter: '**/*.war', fingerprintArtifacts: true, projectName: env.JOB_NAME, selector: specific(env.BUILD_NUMBER)
+        //         echo "creating docker image "
+        //         sh 'whoami'
+        //         sh "docker build -t $dockerImages:$BUILD_NUMBER ."
+        //     }
+        // }
+        // stage('Trivy Scan for Docker Image'){
+        //     agent {
+        //         label 'slave-node1'
+        //     }
+        //     steps {
+        //         sh 'echo'
+        //         sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $dockerImages:$BUILD_NUMBER'
+        //     }
+        // }
+
+        // stage('Push Image') {
+        //     agent {
+        //         label 'slave-node1'
+        //     }
+        //     steps {
+        //         withDockerRegistry(credentialsId: 'dockerhub-credentials', url: ''){
+        //             sh '''
+        //             docker push $dockerImages:$BUILD_NUMBER
+        //             '''
+        //         }
+        //     }
+        // }
+
+        // stage('Deploy to Development Env') {
+        //     agent {
+        //         label 'slave-node1'
+        //     }
+        //     steps {
+        //         echo "Running app on  Development env"
+        //         sh '''
+        //         docker stop tomcatInstanceDev || true
+        //         docker rm tomcatInstanceDev || true
+        //         docker run -itd --name tomcatInstanceDev -p 8082:8080 $dockerImages:$BUILD_NUMBER
+        //         '''
+        //     }
+        // }
+        // stage('Deploy Production Environment') {
+        //     agent {
+        //         label 'slave-node1'
+        //     }
+        //     steps {
+        //         timeout(time:1, unit:'DAYS'){
+        //             input message:'Approve PRODUCTION Deployment?'
+        //         }
+        //         echo "Running app on Prod env"
+        //         sh '''
+        //         docker stop tomcatInstanceProd || true
+        //         docker rm tomcatInstanceProd || true
+        //         docker run -itd --name tomcatInstanceProd -p 8083:8080 $dockerImages:$BUILD_NUMBER
+        //         '''
+        //     }
+        // }
+    }
 }
