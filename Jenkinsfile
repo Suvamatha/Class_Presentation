@@ -32,7 +32,7 @@ pipeline {
         stage('Trivy Scan for Docker Image'){
             // agent {
             //     label 'slave-node1'
-            }
+            // }  // Fixed missing closing brace
             steps {
                 sh 'echo'
                 sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $dockerImages:$BUILD_NUMBER'
