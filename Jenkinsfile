@@ -13,23 +13,23 @@ pipeline {
             }
             post {
                 success {
-                    echo 'Build Complet so archiving the war file'
+                    echo 'Build Completed so archiving the war file'
                     archiveArtifacts artifacts: '**/*.war', followSymlinks: false
 
                 }
             }
         }
-        // stage('Create Docker image') {
-        //     agent {
-        //         label 'slave-node1'
-        //     }   
-        //     steps {
-        //         copyArtifacts filter: '**/*.war', fingerprintArtifacts: true, projectName: env.JOB_NAME, selector: specific(env.BUILD_NUMBER)
-        //         echo "creating docker image "
-        //         sh 'whoami'
-        //         sh "docker build -t $dockerImages:$BUILD_NUMBER ."
-        //     }
-        // }
+        stage('Create Docker image') {
+            // agent {
+            //     label 'slave-node1'
+            // }   
+            steps {
+                copyArtifacts filter: '**/*.war', fingerprintArtifacts: true, projectName: env.JOB_NAME, selector: specific(env.BUILD_NUMBER)
+                echo "creating docker image "
+                sh 'whoami'
+                sh "docker build -t $dockerImages:$BUILD_NUMBER ."
+            }
+        }
         // stage('Trivy Scan for Docker Image'){
         //     agent {
         //         label 'slave-node1'
