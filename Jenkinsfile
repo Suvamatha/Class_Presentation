@@ -13,7 +13,7 @@ pipeline {
             }
             post {
                 success {
-                    echo 'Build Completed so archiving the war file'
+                    echo 'Build Complet so archiving the war file'
                     archiveArtifacts artifacts: '**/*.war', followSymlinks: false
 
                 }
