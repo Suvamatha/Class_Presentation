@@ -26,32 +26,31 @@ pipeline {
             steps {
                 copyArtifacts filter: '**/*.war', fingerprintArtifacts: true, projectName: env.JOB_NAME, selector: specific(env.BUILD_NUMBER)
                 echo "creating docker image "
-                sh 'whoami'
                 sh "docker build -t $dockerImages:$BUILD_NUMBER ."
             }
         }
-        // stage('Trivy Scan for Docker Image'){
-        //     agent {
-        //         label 'slave-node1'
-        //     }
-        //     steps {
-        //         sh 'echo'
-        //         sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $dockerImages:$BUILD_NUMBER'
-        //     }
-        // }
+        stage('Trivy Scan for Docker Image'){
+            // agent {
+            //     label 'slave-node1'
+            }
+            steps {
+                sh 'echo'
+                sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $dockerImages:$BUILD_NUMBER'
+            }
+        }
 
-        // stage('Push Image') {
-        //     agent {
-        //         label 'slave-node1'
-        //     }
-        //     steps {
-        //         withDockerRegistry(credentialsId: 'dockerhub-credentials', url: ''){
-        //             sh '''
-        //             docker push $dockerImages:$BUILD_NUMBER
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Push Image') {
+            // agent {
+            //     label 'slave-node1'
+            // }
+            steps {
+                withDockerRegistry(credentialsId: 'dockerhub-credentials', url: ''){
+                    sh '''
+                    docker push $dockerImages:$BUILD_NUMBER
+                    '''
+                }
+            }
+        }
 
         // stage('Deploy to Development Env') {
         //     agent {
